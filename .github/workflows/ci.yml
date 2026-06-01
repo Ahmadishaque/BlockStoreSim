@@ -1,0 +1,40 @@
+name: BlockStoreSim CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pip
+          python3 -m pip install pytest
+
+      - name: Configure CMake
+        run: cmake -S . -B build
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run CLI smoke test
+        run: |
+          cat << 'EOF' | ./build/blockstoresim
+          WRITE user_1 hello
+          WRITE user_2 hello
+          STATS
+          SNAPSHOT
+          EXIT
+          EOF
+
+      - name: Run regression tests
+        run: pytest -q
